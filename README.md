@@ -11,6 +11,5 @@ image topics specified in the app's settings. These by default is
 /SwissRanger/intensity/image_raw and /SwissRanger/distance/image_raw for the
 intensity and distance images respectively.
 
--   You can run a bag from
-    https://github.com/austinoboyle/swissranger-image-correction/tree/master/data
-    using `rosbag play --loop sr_test_00.bag` to run some sample data through the algorithm.
+-   Test data located at /test.
+-   Run sample data using `rosbag play --loop sr_test_00.bag`
