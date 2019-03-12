@@ -79,6 +79,7 @@ void *run_optimization_task(void *thread_arg)
     pthread_mutex_lock(&g_is_optimizing_mutex);
     g_is_optimizing = false;
     pthread_mutex_unlock(&g_is_optimizing_mutex);
+    std::cout << "END OPTIMIZATION" << std::endl;
 
     pthread_exit(NULL);
 }
@@ -112,9 +113,9 @@ void image_callback(const sensor_msgs::ImageConstPtr &intensity,
     cv_bridge::CvImagePtr corrected;
     try
     {
-        intensity_ptr = cv_bridge::toCvCopy(intensity, sensor_msgs::image_encodings::TYPE_16UC1);
-        distance_ptr = cv_bridge::toCvCopy(distance, sensor_msgs::image_encodings::TYPE_16UC1);
-        corrected = cv_bridge::toCvCopy(distance, sensor_msgs::image_encodings::TYPE_16UC1);
+        intensity_ptr = cv_bridge::toCvCopy(intensity, sensor_msgs::image_encodings::BGR8);
+        distance_ptr = cv_bridge::toCvCopy(distance, sensor_msgs::image_encodings::BGR8);
+        corrected = cv_bridge::toCvCopy(distance, sensor_msgs::image_encodings::BGR8);
     }
     catch (cv_bridge::Exception &e)
     {
@@ -128,7 +129,7 @@ void image_callback(const sensor_msgs::ImageConstPtr &intensity,
     cv::Mat new_image;
 
     // Convert coloured SwissRanger img to Grayscale for keypoint detection
-    cv::cvtColor(corrected->image, corrected->image, CV_BGR2GRAY);
+    cv::cvtColor(corrected->image, new_image, CV_BGR2GRAY);
 
     // Read GT exposure time if available for this frame
     // Todo: Check if index is out of bounds, if gt exp file has not enough lines
@@ -217,8 +218,8 @@ int main(int argc, char **argv)
     Settings run_settings;
     run_settings.start_image_index = 0;
     run_settings.end_image_index = -1;
-    run_settings.image_width = 640;
-    run_settings.image_height = 480;
+    run_settings.image_width = 176;
+    run_settings.image_height = 144;
     run_settings.visualize_cnt = 1;
     run_settings.tracker_patch_size = 3;
     run_settings.nr_pyramid_levels = 2;

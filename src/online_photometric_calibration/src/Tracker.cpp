@@ -262,7 +262,6 @@ std::vector<cv::Point2f> Tracker::extractFeatures(cv::Mat frame, std::vector<cv:
 
         // Extract features
         std::vector<cv::Point2f> good_corners;
-        std::cout << "BEF" << std::endl;
         cv::goodFeaturesToTrack(frame_roi,
                                 good_corners,
                                 points_per_cell,
@@ -272,7 +271,6 @@ std::vector<cv::Point2f> Tracker::extractFeatures(cv::Mat frame, std::vector<cv:
                                 7,
                                 false,
                                 0.04);
-        std::cout << "AFTER" << std::endl;
         // Add the strongest "points per cell" features from this extraction
         for (int k = 0; k < good_corners.size(); k++)
         {

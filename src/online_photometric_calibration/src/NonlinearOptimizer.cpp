@@ -294,12 +294,7 @@ double NonlinearOptimizer::evfOptimization(bool show_debug_prints)
     cv::Mat Jacobian_T;
     cv::transpose(Jacobian, Jacobian_T);
 
-    std::cout << "MUL START" << std::endl;
-    std::cout << "JACOB TYPE" << Jacobian.type() << Jacobian.size() << std::endl;
-    std::cout << "WEIGHTS TYPE" << Weights_Jacobian.type() << Weights_Jacobian.size() << std::endl;
-
     cv::Mat A = Jacobian_T * (Weights_Jacobian.mul(Jacobian));
-    std::cout << "MUL END" << std::endl;
     //cv::Mat A = Jacobian.t()*Jacobian;
     cv::Mat b = -Jacobian.t() * Residuals; // Todo: reuse Jacobian_T to save time?
 
