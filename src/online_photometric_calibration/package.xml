@@ -53,6 +53,10 @@
   <depend>opencv2</depend>
   <depend>threads</depend>
   <depend>cv_bridge</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>message_filters</depend>
+  <depend>image_transport</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

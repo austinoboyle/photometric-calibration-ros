@@ -18,17 +18,13 @@ SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-march=${CXX_MARCH} ${CMAKE_CXX_FLAGS_RELWI
 # warnings
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-sign-compare")
 
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/src
-)
-
 # NOTE: OpenCV 3 is shipped with ROS Kinetic.  Using OpenCV 2 here causes a
 # conflict between cv_bridge and photometric_calibration
-find_package(catkin REQUIRED COMPONENTS roscpp cv_bridge)
+find_package(catkin REQUIRED COMPONENTS roscpp cv_bridge sensor_msgs std_msgs
+message_filters image_transport)
 find_package(OpenCV 3 REQUIRED)
 find_package(Threads REQUIRED)
+
 
 catkin_package(
 #  INCLUDE_DIRS src
@@ -36,6 +32,12 @@ catkin_package(
  CATKIN_DEPENDS roscpp
  DEPENDS OpenCV
 #  DEPENDS system_lib
+)
+
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/src
 )
 
 find_program(CCACHE_PROGRAM ccache)
