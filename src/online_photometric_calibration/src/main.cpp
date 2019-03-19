@@ -43,8 +43,7 @@ struct Settings
     string exposure_gt_file; // Exposure times ground truth file.
     string calibration_mode; // Choose "online" or "batch".
 
-    string intensity_topic; // ROS Topic for intensity data
-    string range_topic;     // ROS Topic for range data
+    string image_topic; // ROS Topic for images
 };
 
 struct Globals
@@ -97,9 +96,7 @@ std::vector<string> split(const string &s, char delim)
     return tokens;
 }
 
-void image_callback(const sensor_msgs::ImageConstPtr &intensity,
-                    const sensor_msgs::ImageConstPtr &distance,
-                    ros::Publisher &pub,
+void image_callback(const sensor_msgs::ImageConstPtr &corrected,
                     Globals *g,
                     Settings *run_settings,
                     Database *database,
@@ -108,28 +105,20 @@ void image_callback(const sensor_msgs::ImageConstPtr &intensity,
                     NonlinearOptimizer &backend_optimizer)
 {
     // Convert ROS Images to CV image ptrs
-    cv_bridge::CvImagePtr distance_ptr;
-    cv_bridge::CvImagePtr intensity_ptr;
-    cv_bridge::CvImagePtr corrected;
+    cv_bridge::CvImagePtr corrected_ptr;
     try
     {
-        intensity_ptr = cv_bridge::toCvCopy(intensity, sensor_msgs::image_encodings::BGR8);
-        distance_ptr = cv_bridge::toCvCopy(distance, sensor_msgs::image_encodings::BGR8);
-        corrected = cv_bridge::toCvCopy(distance, sensor_msgs::image_encodings::BGR8);
+        corrected_ptr = cv_bridge::toCvCopy(corrected, sensor_msgs::image_encodings::TYPE_8UC1);
     }
     catch (cv_bridge::Exception &e)
     {
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
+    cv::Mat new_image = corrected_ptr->image;
+
     g->image_num += 1;
-
-    // Correct infrared image for range. Multiply by range^2
-    corrected->image = intensity_ptr->image.mul(distance_ptr->image.mul(distance_ptr->image));
-    cv::Mat new_image;
-
-    // Convert coloured SwissRanger img to Grayscale for keypoint detection
-    cv::cvtColor(corrected->image, new_image, CV_BGR2GRAY);
+    std::cout << "IMAGE NUM:" << g->image_num << std::endl;
 
     // Read GT exposure time if available for this frame
     // Todo: Check if index is out of bounds, if gt exp file has not enough lines
@@ -170,8 +159,11 @@ void image_callback(const sensor_msgs::ImageConstPtr &intensity,
 
     // Visualize tracking
     if (g->image_num % run_settings->visualize_cnt == 0)
+    {
         database->visualizeTracking();
+    }
 
+    // return;
     pthread_mutex_lock(&g_is_optimizing_mutex);
     bool is_optimizing = g_is_optimizing;
     pthread_mutex_unlock(&g_is_optimizing_mutex);
@@ -231,8 +223,7 @@ int main(int argc, char **argv)
     run_settings.nr_active_frames = 200;
     run_settings.keyframe_spacing = 15;
     run_settings.min_keyframes_valid = 3;
-    run_settings.intensity_topic = "/SwissRanger/intensity/image_raw";
-    run_settings.range_topic = "/SwissRanger/distance/image_raw";
+    run_settings.image_topic = "/image_converter/converted";
 
     app.add_option("-i,--image-folder", run_settings.image_folder, "Folder with image files to read.", true);
     app.add_option("--start-image-index", run_settings.start_image_index, "Start reading from this image index.", true);
@@ -242,8 +233,7 @@ int main(int argc, char **argv)
     app.add_option("--exposure-gt-file", run_settings.exposure_gt_file, "Textfile containing ground truth exposure times for each frame for visualization.", true);
     app.add_option("--calibration-mode", run_settings.calibration_mode, "Choose 'online' or 'batch'", true);
 
-    app.add_option("--intensity-topic", run_settings.intensity_topic, "Choose a ros topic to subscribe to for intensity data", true);
-    app.add_option("--range-topic", run_settings.range_topic, "Choose a ros topic to subscribe to for intensity data", true);
+    app.add_option("--image-topic", run_settings.image_topic, "Choose a ros topic to subscribe to for intensity data", true);
 
     app.add_option("--nr-active-frames", run_settings.nr_active_frames, "Maximum number of frames to be stored in the database.", true);
     app.add_option("--keyframe-spacing", run_settings.keyframe_spacing, "Number of frames that keyframes are apart in the backend optimizer.", true);
@@ -279,19 +269,17 @@ int main(int argc, char **argv)
 
     ros::init(argc, argv, "online_photometric_calibration");
     ros::NodeHandle nh;
-    ros::Publisher test_pub = nh.advertise<std_msgs::String>("image_converter/test_cpp", 1000);
 
     // Listen for ros topic and publish to image_callback with bound args
     image_transport::ImageTransport it(nh);
     image_transport::Publisher image_pub = it.advertise("/image_converter/converted", 1);
+    image_transport::Subscriber image_sub = it.subscribe(run_settings.image_topic, 1, boost::bind(&image_callback, _1, &g, &run_settings, &database, tracker, exposure_estimator, backend_optimizer));
 
-    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image>
-        MySyncPolicy;
-
-    message_filters::Subscriber<sensor_msgs::Image> intensity_sub(nh, run_settings.intensity_topic, 1);
-    message_filters::Subscriber<sensor_msgs::Image> distance_sub(nh, run_settings.range_topic, 1);
-    message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), intensity_sub, distance_sub);
-    sync.registerCallback(boost::bind(&image_callback, _1, _2, test_pub, &g, &run_settings, &database, tracker, exposure_estimator, backend_optimizer));
+    // typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image>
+    //     MySyncPolicy;
+    // message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, run_settings.image_topic, 1);
+    // message_filters::Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), image_sub);
+    // sync.registerCallback(boost::bind(&image_callback, _1, );
     ros::spin();
 
     // Moved this from the online_calibration to after ROS exits.
@@ -306,7 +294,7 @@ int main(int argc, char **argv)
         g.vis_exponent = backend_optimizer.visualizeOptimizationResult(backend_optimizer.m_raw_inverse_response);
     }
     // wait for key-press, then exit
-    std::cout << "Finished. Press key to exit." << std::endl;
-    cv::waitKey(0);
+    std::cout << "Finished." << std::endl;
+    // cv::waitKey(0);
     return 0;
 }

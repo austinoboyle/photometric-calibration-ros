@@ -103,23 +103,20 @@ void callback(const ImageConstPtr &intensity, const ImageConstPtr &distance, ima
     cv_bridge::CvImagePtr corrected;
     try
     {
-        intensity_ptr = cv_bridge::toCvCopy(intensity, image_encodings::MONO16);
-        distance_ptr = cv_bridge::toCvCopy(distance, image_encodings::MONO16);
-        corrected = cv_bridge::toCvCopy(distance, image_encodings::MONO16);
+        intensity_ptr = cv_bridge::toCvCopy(intensity, image_encodings::TYPE_8UC1);
+        distance_ptr = cv_bridge::toCvCopy(distance, image_encodings::TYPE_8UC1);
+        corrected = cv_bridge::toCvCopy(distance, image_encodings::TYPE_8UC1);
     }
     catch (cv_bridge::Exception &e)
     {
         ROS_ERROR("cv_bridge exception: %s", e.what());
         return;
     }
-    intensity_ptr->image.convertTo(intensity_ptr->image, CV_64FC1);
-    distance_ptr->image.convertTo(distance_ptr->image, CV_64FC1);
-    corrected->image.convertTo(corrected->image, CV_64FC1);
 
     corrected->image = intensity_ptr->image.mul(distance_ptr->image.mul(distance_ptr->image));
-    corrected->image.convertTo(corrected->image, CV_16UC1, 1.0 / 255.0);
-    std::cout << corrected->encoding << std::endl
-              << corrected->image << std::endl;
+    // corrected->image.convertTo(corrected->image, CV_16UC1, 1.0 / 255.0);
+    // std::cout << corrected->encoding << std::endl
+    //           << corrected->image << std::endl;
 
     // corrected->image /= 1 << 48;
     pub.publish(corrected->toImageMsg());
@@ -131,7 +128,6 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
     image_transport::Publisher image_pub = it.advertise("/image_converter/converted", 1);
-    // test_pub = nh.advertise<std_msgs::String>("image_converter/test_cpp", 1000);
 
     typedef sync_policies::ApproximateTime<Image, Image> MySyncPolicy;
 
