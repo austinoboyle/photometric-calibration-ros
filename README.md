@@ -4,7 +4,14 @@
 
 1. `catkin_make #or catkin build`
 2. `source ./devel/setup.bash`
-3. `rosrun online_photometric_calibration online_pcalib_demo`
+
+### Run Range Correction Node:
+
+`rosrun range_correction correc`
+
+### Run Photometric Calibration Node
+
+`rosrun online_photometric_calibration online_pcalib_demo`
 
 **NOTE**: You won't see anything unless you have a ROS publishers publishing on the
 image topics specified in the app's settings. These by default is
