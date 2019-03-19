@@ -4,3 +4,4 @@ build/
 .catkin_tools/
 logs/
 *.bag
+gdb.txt
