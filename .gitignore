@@ -5,3 +5,5 @@ build/
 logs/
 *.bag
 gdb.txt
+*.pyc
+.pytest_cache/
