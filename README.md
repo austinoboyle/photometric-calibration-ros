@@ -7,7 +7,7 @@
 
 ### Run Range Correction Node:
 
-`rosrun range_correction correc`
+`rosrun range_correction correct`
 
 ### Run Photometric Calibration Node
 
