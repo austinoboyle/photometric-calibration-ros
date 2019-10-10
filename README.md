@@ -18,5 +18,5 @@ image topics specified in the app's settings. These by default is
 /SwissRanger/intensity/image_raw and /SwissRanger/distance/image_raw for the
 intensity and distance images respectively.
 
--   Test data located at /test.
+-   Test data located at /data.
 -   Run sample data using `rosbag play --loop sr_test_00.bag`
